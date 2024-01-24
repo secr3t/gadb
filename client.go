@@ -93,9 +93,10 @@ func (c Client) DeviceList() (devices []Device, err error) {
 		sliceAttrs := fields[2:]
 		mapAttrs := map[string]string{}
 		for _, field := range sliceAttrs {
-			split := strings.Split(field, ":")
-			key, val := split[0], split[1]
-			mapAttrs[key] = val
+			if split := strings.Split(field, ":"); len(split) == 2 {
+				key, val := split[0], split[1]
+				mapAttrs[key] = val
+			}
 		}
 		devices = append(devices, Device{adbClient: c, serial: fields[0], attrs: mapAttrs})
 	}
