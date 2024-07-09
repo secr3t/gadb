@@ -28,13 +28,15 @@ const (
 	StateUnknown      DeviceState = "UNKNOWN"
 	StateOnline       DeviceState = "online"
 	StateOffline      DeviceState = "offline"
+	StateUnauthorized DeviceState = "unauthorized"
 	StateDisconnected DeviceState = "disconnected"
 )
 
 var deviceStateStrings = map[string]DeviceState{
-	"":        StateDisconnected,
-	"offline": StateOffline,
-	"device":  StateOnline,
+	"":             StateDisconnected,
+	"offline":      StateOffline,
+	"device":       StateOnline,
+	"unauthorized": StateUnauthorized,
 }
 
 func deviceStateConv(k string) (deviceState DeviceState) {
@@ -54,9 +56,10 @@ type DeviceForward struct {
 }
 
 type Device struct {
-	adbClient Client
-	serial    string
-	attrs     map[string]string
+	adbClient    Client
+	serial       string
+	isAuthorized bool
+	attrs        map[string]string
 }
 
 func (d Device) Product() string {
@@ -127,6 +130,45 @@ func (d Device) ForwardList() (deviceForwardList []DeviceForward, err error) {
 	}
 	// resp, err := d.adbClient.executeCommand(fmt.Sprintf("host-serial:%s:list-forward", d.serial))
 	return
+}
+
+func (d Device) ChangeIp() {
+	d.DisableData()
+	WaitFor(d.IsNetworkUnAvailable)
+	d.EnableData()
+	WaitFor(d.IsNetworkAvailable)
+}
+
+func WaitFor(predicate func() bool) {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	for range ticker.C {
+		if predicate() {
+			ticker.Stop()
+			break
+		}
+	}
+}
+
+func (d Device) IsNetworkUnAvailable() bool {
+	return strings.Contains(d.pingGoogle(), "unknown host")
+}
+func (d Device) IsNetworkAvailable() bool {
+	return !d.IsNetworkUnAvailable()
+}
+
+func (d Device) pingGoogle() (ip string) {
+	// ping -c 1 google.com
+	// ping: unknown host google.com --> error
+	ip, _ = d.RunShellCommand("ping", "-c", "1", "google.com")
+	return
+}
+
+func (d Device) DisableData() {
+	d.RunShellCommand("svc", "data", "disable")
+}
+
+func (d Device) EnableData() {
+	d.RunShellCommand("svc", "data", "enable")
 }
 
 func (d Device) ForwardKill(localPort int) (err error) {

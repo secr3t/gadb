@@ -2,6 +2,7 @@ package gadb
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -329,4 +330,21 @@ func TestDevice_Pull(t *testing.T) {
 	if err = ioutil.WriteFile(userHomeDir+"/Desktop/hello.txt", buffer.Bytes(), DefaultFileMode); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestWaitFor(t *testing.T) {
+	st := time.Now()
+	WaitFor(predicate)
+	t.Log(time.Since(st))
+}
+
+var cnt = 0
+
+func predicate() bool {
+	cnt++
+	fmt.Println(cnt)
+	if cnt > 10 {
+		return true
+	}
+	return false
 }

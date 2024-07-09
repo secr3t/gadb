@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
-const AdbServerPort = 5037
-const AdbDaemonPort = 5555
+const (
+	AdbServerPort      = 5037
+	AdbDaemonPort      = 5555
+	deviceUnAuthorized = "unauthorized"
+)
 
 type Client struct {
 	host string
@@ -85,10 +88,6 @@ func (c Client) DeviceList() (devices []Device, err error) {
 		}
 
 		fields := strings.Fields(line)
-		if len(fields) < 5 || len(fields[0]) == 0 {
-			debugLog(fmt.Sprintf("can't parse: %s", line))
-			continue
-		}
 
 		sliceAttrs := fields[2:]
 		mapAttrs := map[string]string{}
@@ -98,7 +97,12 @@ func (c Client) DeviceList() (devices []Device, err error) {
 				mapAttrs[key] = val
 			}
 		}
-		devices = append(devices, Device{adbClient: c, serial: fields[0], attrs: mapAttrs})
+		devices = append(devices, Device{
+			adbClient:    c,
+			serial:       fields[0],
+			isAuthorized: fields[1] != deviceUnAuthorized,
+			attrs:        mapAttrs,
+		})
 	}
 
 	return
