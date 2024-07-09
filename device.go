@@ -150,10 +150,10 @@ func WaitFor(predicate func() bool) {
 }
 
 func (d Device) IsNetworkUnAvailable() bool {
-	return strings.Contains(d.pingGoogle(), "unknown host")
+	return !d.IsNetworkAvailable()
 }
 func (d Device) IsNetworkAvailable() bool {
-	return !d.IsNetworkUnAvailable()
+	return strings.Contains(d.pingGoogle(), "1 packets transmitted")
 }
 
 func (d Device) pingGoogle() (ip string) {
