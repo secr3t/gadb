@@ -58,8 +58,8 @@ type DeviceForward struct {
 type Device struct {
 	adbClient    Client
 	serial       string
-	isAuthorized bool
 	attrs        map[string]string
+	IsAuthorized bool
 }
 
 func (d Device) Product() string {
