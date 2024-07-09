@@ -100,7 +100,7 @@ func (c Client) DeviceList() (devices []Device, err error) {
 		devices = append(devices, Device{
 			adbClient:    c,
 			serial:       fields[0],
-			isAuthorized: fields[1] != deviceUnAuthorized,
+			IsAuthorized: fields[1] != deviceUnAuthorized,
 			attrs:        mapAttrs,
 		})
 	}
