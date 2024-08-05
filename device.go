@@ -134,10 +134,8 @@ func (d Device) ForwardList() (deviceForwardList []DeviceForward, err error) {
 
 func (d Device) ChangeIp() {
 	d.DisableData()
-	WaitFor(d.IsNetworkUnAvailable)
 	time.Sleep(5 * time.Second)
 	d.EnableData()
-	WaitFor(d.IsNetworkAvailable)
 }
 
 func WaitFor(predicate func() bool) {
