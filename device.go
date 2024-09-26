@@ -143,10 +143,10 @@ func (d Device) ChangeIp() {
 }
 
 func (d Device) IsLocked() bool {
-	result, _ := d.RunShellCommand("dumpsys power | grep 'Display Power: state='")
-	powerState := strings.Split(result, "state=")
+	result, _ := d.RunShellCommand("dumpsys power | grep 'mWakefulness='")
+	powerState := strings.Split(result, "mWakefulness=")
 
-	return strings.ToUpper(strings.TrimSpace(powerState[1])) != "ON"
+	return strings.ToUpper(strings.TrimSpace(powerState[1])) != "AWAKE"
 }
 
 func (d Device) Lock() {

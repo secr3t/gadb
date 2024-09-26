@@ -244,6 +244,11 @@ func TestDevice_Unlock(t *testing.T) {
 	dev.Unlock()
 }
 
+func TestDevice_Lock(t *testing.T) {
+	dev := devices[0]
+	dev.Lock()
+}
+
 func TestDevice_EnableScreenRotation(t *testing.T) {
 	devices[0].EnableScreenRotation()
 }
