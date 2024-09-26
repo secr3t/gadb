@@ -138,6 +138,39 @@ func (d Device) ChangeIp() {
 	d.EnableData()
 }
 
+func (d Device) IsLocked() bool {
+	result, _ := d.RunShellCommand("dumpsys power | grep 'Display Power: state='")
+	powerState := strings.Split(result, "state=")
+
+	return strings.ToUpper(strings.TrimSpace(powerState[1])) != "ON"
+}
+
+func (d Device) Lock() {
+	if d.IsLocked() {
+		return
+	}
+	d.ToggleScreenLock()
+}
+
+func (d Device) Unlock() {
+	if !d.IsLocked() {
+		return
+	}
+	d.ToggleScreenLock()
+}
+
+func (d Device) DisableScreenRotation() {
+	d.RunShellCommand("settings put system accelerometer_rotation 0")
+}
+
+func (d Device) EnableScreenRotation() {
+	d.RunShellCommand("settings put system accelerometer_rotation 1")
+}
+
+func (d Device) ToggleScreenLock() {
+	d.RunShellCommand("input keyevent 26")
+}
+
 func WaitFor(predicate func() bool) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	for range ticker.C {
