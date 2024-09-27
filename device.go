@@ -199,6 +199,14 @@ func (d Device) pingGoogle() (ip string) {
 	return
 }
 
+func (d Device) DisableWifi() {
+	d.RunShellCommand("svc", "wifi", "disable")
+}
+
+func (d Device) EnableWifi() {
+	d.RunShellCommand("svc", "wifi", "enable")
+}
+
 func (d Device) DisableData() {
 	d.RunShellCommand("svc", "data", "disable")
 }
