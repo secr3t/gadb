@@ -3,9 +3,10 @@ package gadb
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"github.com/secr3t/gadb/utils"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -59,7 +60,7 @@ func (d Device) resolveLaunchableActivity(pkg string, opts map[string]interface{
 			return "", err
 		}
 
-		names := parseLaunchableActivityNames(stdout)
+		names := utils.ParseLaunchableActivityNames(stdout)
 		if len(names) == 0 {
 			log.Println(stdout)
 			return "", errors.New(fmt.Sprintf("Unable to resolve the launchable activity of '%s'. Is it installed on the device?", pkg))
@@ -69,13 +70,13 @@ func (d Device) resolveLaunchableActivity(pkg string, opts map[string]interface{
 			return names[0], nil
 		}
 
-		tmpRoot, err := ioutil.TempDir("", "tmpRoot")
+		tmpRoot, err := os.MkdirTemp("", "tmpRoot")
 		if err != nil {
 			return "", err
 		}
 		defer os.RemoveAll(tmpRoot)
 
-		tmpApp, err := d.Pull(pkg, tmpRoot)
+		tmpApp, err := d.pullApk(pkg, tmpRoot)
 		if err != nil {
 			return "", err
 		}
@@ -91,17 +92,43 @@ func (d Device) resolveLaunchableActivity(pkg string, opts map[string]interface{
 		return apkActivity, nil
 	}
 
-	stdout, stderr, err := m.shell([]string{"cmd", "package", "resolve-activity", "--brief", pkg})
+	stdout, err := d.RunShellCommand("cmd", "package", "resolve-activity", "--brief", pkg)
 	if err != nil {
 		return "", err
 	}
 
 	for _, line := range strings.Split(stdout, "\n") {
 		line = strings.TrimSpace(line)
-		if m.isValidClass(line) {
+		if d.isValidClass(line) {
 			return line, nil
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("Unable to resolve the launchable activity of '%s'. Original error: %s", pkg, stderr))
+	return "", errors.New(fmt.Sprintf("Unable to resolve the launchable activity of '%s'. Original error: %s", pkg, err))
+}
+
+func (d Device) pullApk(pkg string, tmpDir string) (string, error) {
+	// 'pm path <pkg>' 명령어를 통해 APK 경로 얻기
+	stdout, err := d.RunShellCommand("pm", "path", pkg)
+	if err != nil {
+		return "", err
+	}
+
+	packageMarker := "package:"
+	if !strings.HasPrefix(stdout, packageMarker) {
+		return "", errors.New(fmt.Sprintf("Cannot pull the .apk package for '%s'. Original error: %s", pkg, stdout))
+	}
+
+	// 원격 경로에서 패키지 부분을 제거
+	remotePath := strings.Replace(stdout, packageMarker, "", 1)
+	tmpApp := filepath.Join(tmpDir, fmt.Sprintf("%s.apk", pkg))
+	tmpAppW, _ := os.Open(tmpApp)
+	// 원격 경로에서 로컬 tmpDir로 APK 파일을 가져오기
+	err = d.Pull(remotePath, tmpAppW)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("Pulled app for package '%s' to '%s'\n", pkg, tmpApp)
+	return tmpApp, nil
 }
