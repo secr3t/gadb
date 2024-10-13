@@ -7,11 +7,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
 
-var DeviceTempPath = "/data/local/tmp"
+var (
+	DeviceTempPath = "/data/local/tmp"
+	windowRegex    = regexp.MustCompile(`([\w.]+)/([\w.]+)`)
+)
 
 type DeviceFileInfo struct {
 	Name         string
@@ -433,6 +437,18 @@ func (d Device) AppUninstall(appPackageName string, keepDataAndCache ...bool) (e
 
 	if !strings.Contains(shellOutput, "Success") {
 		return fmt.Errorf("apk uninstalled: %s", shellOutput)
+	}
+
+	return
+}
+
+func (d Device) GetCurrentFocusedWindow() (pkg, activity string) {
+	//ex) com.nhn.android.search/com.nhn.android.search.tutorial.TutorialActivity
+	result, _ := d.RunShellCommand("dumpsys window | grep mCurrentFocus")
+
+	matched := windowRegex.FindAllStringSubmatch(result, -1)
+	if len(matched) > 0 {
+		return matched[0][1], matched[0][2]
 	}
 
 	return
